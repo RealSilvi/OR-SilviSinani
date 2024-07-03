@@ -1,12 +1,0 @@
-
-k	java:S1172"QRename this local variable to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Ëž´ºøÿÿÿÿ
-0
-java:S1220""Move this file to a named package.
-e	java:S116"PRename this field "_vars" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Ûøêõ
-@	java:S106]"+Replace this use of System.out by a logger.(À•–º
-E	java:S106^"+Replace this use of System.out by a logger.(ÔÅÜ·üÿÿÿÿ
-E	java:S106_"+Replace this use of System.out by a logger.(îÖƒþøÿÿÿÿ
-E	java:S106`"+Replace this use of System.out by a logger.(î‡ó©ùÿÿÿÿ
-@	java:S106n"+Replace this use of System.out by a logger.(Š„À­
-E	java:S106o"+Replace this use of System.out by a logger.(Ö²¾€üÿÿÿÿ
-@	java:S106s"+Replace this use of System.err by a logger.(§ƒÕÜ
