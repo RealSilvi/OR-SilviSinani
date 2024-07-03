@@ -1,0 +1,13 @@
+
+0
+java:S1220""Move this file to a named package.
+P
+java:S6213":Rename this variable to not match a restricted identifier.(†¬Ò¹
+@	java:S106*"+Replace this use of System.out by a logger.(Š„À­
+E	java:S106+"+Replace this use of System.out by a logger.(Ö²¾€üÿÿÿÿ
+@	java:S106,"+Replace this use of System.out by a logger.(ª­Ùü
+@	java:S1065"+Replace this use of System.out by a logger.(àÛø°
+?	java:S106<"+Replace this use of System.out by a logger.(¶ÝÈ
+@	java:S106C"+Replace this use of System.err by a logger.(žÄ³á
+P
+java:S6213H":Rename this variable to not match a restricted identifier.(‡³™í

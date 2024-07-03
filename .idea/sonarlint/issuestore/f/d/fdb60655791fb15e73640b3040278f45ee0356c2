@@ -1,0 +1,18 @@
+
+0
+java:S1220""Move this file to a named package.
+[	java:S112_"FDefine and throw a dedicated exception instead of using a generic one.(ø™Á–
+`	java:S112j"FDefine and throw a dedicated exception instead of using a generic one.(Îúıüÿÿÿÿ
+E	java:S106$"+Replace this use of System.out by a logger.(óïÈÖüÿÿÿÿ
+E	java:S106%"+Replace this use of System.out by a logger.(ÔÅÜ·üÿÿÿÿ
+E	java:S106&"+Replace this use of System.out by a logger.(îÖƒşøÿÿÿÿ
+@	java:S106'"+Replace this use of System.out by a logger.(‰„Ôê
+@	java:S106("+Replace this use of System.out by a logger.(Ë×ßå
+E	java:S106)"+Replace this use of System.out by a logger.(î‡ó©ùÿÿÿÿ
+h
+java:S3776,"RRefactor this method to reduce its Cognitive Complexity from 16 to the 15 allowed.(Çµí‘
+U
+java:S6213G":Rename this variable to not match a restricted identifier.(—ŒÍıÿÿÿÿ
+E	java:S106e"+Replace this use of System.out by a logger.(¢œË¼ÿÿÿÿÿ
+E	java:S106f"+Replace this use of System.out by a logger.(ûªÆşÿÿÿÿ
+E	java:S106g"+Replace this use of System.out by a logger.(ÓÔ‹¶ÿÿÿÿÿ

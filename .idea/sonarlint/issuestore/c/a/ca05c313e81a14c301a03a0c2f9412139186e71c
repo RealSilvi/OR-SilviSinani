@@ -1,0 +1,11 @@
+
+0
+java:S1220""Move this file to a named package.
+e	java:S116!"PRename this field "_done" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(ºüÆÙ
+e	java:S116""PRename this field "_vars" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Ûøêõ
+a	java:S116#"MRename this field "_x" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(«›Ø
+E	java:S1068"+Replace this use of System.out by a logger.(–“•ûÿÿÿÿ
+?	java:S1069"+Replace this use of System.out by a logger.(€ëÂn
+@	java:S106C"+Replace this use of System.out by a logger.(Š„À­
+E	java:S106D"+Replace this use of System.out by a logger.(Ö²¾€üÿÿÿÿ
+@	java:S106H"+Replace this use of System.err by a logger.(§ƒÕÜ

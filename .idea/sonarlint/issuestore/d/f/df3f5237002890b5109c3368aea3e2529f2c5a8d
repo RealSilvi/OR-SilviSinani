@@ -1,0 +1,14 @@
+
+r	java:S106"+Replace this use of System.out by a logger.(‡‡ïŒûÿÿÿÿ8 ±ŒÈ‡2J$9f7192c7-7572-4ed0-bf61-c7c7e34130d7
+r	java:S106 "+Replace this use of System.out by a logger.(ì¶ýßýÿÿÿÿ8 ±ŒÈ‡2J$d280948d-3af2-4afa-a505-10fb094f06d0
+l	java:S106!"+Replace this use of System.out by a logger.(›‡è}8 ±ŒÈ‡2J$4b2aac98-f43b-4e6e-a142-6d4dd36304aa
+r	java:S106""+Replace this use of System.out by a logger.(ßøáçþÿÿÿÿ8 ±ŒÈ‡2J$3816eef6-cfe9-41d3-ac0b-38553e336c35
+}
+java:S6213.":Rename this variable to not match a restricted identifier.(†¬Ò¹8¨±ŒÈ‡2J$38bd5255-da5a-42ad-929e-94006c0b34f1
+r	java:S106\"+Replace this use of System.err by a logger.(–Ð¿ìüÿÿÿÿ8ª±ŒÈ‡2J$7aafc8a1-3315-431e-a64d-1b92e89be664
+}
+java:S6213p":Rename this variable to not match a restricted identifier.(‡³™í8ª±ŒÈ‡2J$5ec11194-b2ab-4b6d-80b8-83a098733287
+~
+java:S6213…":Rename this variable to not match a restricted identifier.(‡³™í8«±ŒÈ‡2J$1f33190d-3dba-4661-9f9b-6a998764f675
+~
+java:S6213 ":Rename this variable to not match a restricted identifier.(‡³™í8­±ŒÈ‡2J$99b7dd36-5fb6-48f7-ac31-9051c824d515

@@ -1,0 +1,16 @@
+
+V
+java:S1220""Move this file to a named package.J$683b2863-0767-44c2-928e-a6475377eccb
+k	java:S106"+Replace this use of System.out by a logger.(‡‡ïŒûÿÿÿÿJ$eb48439d-a505-471a-a04a-f941324fc988
+k	java:S106"+Replace this use of System.out by a logger.(ì¶ýßýÿÿÿÿJ$3af7be66-9836-43de-a35a-5eba10bc747b
+e	java:S106 "+Replace this use of System.out by a logger.(›‡è}J$876a5980-e940-43ce-9336-d3addf5fca79
+k	java:S106!"+Replace this use of System.out by a logger.(ßøáçþÿÿÿÿJ$218f21e4-5d60-4ba6-b5cb-09c72ea8806c
+v
+java:S6213-":Rename this variable to not match a restricted identifier.(†¬Ò¹J$cad41ac6-e302-430e-ad1b-9eac591d2ee2
+k	java:S106["+Replace this use of System.err by a logger.(–Ð¿ìüÿÿÿÿJ$41c49208-cff8-4f05-992b-bd3a548c0bc3
+v
+java:S6213o":Rename this variable to not match a restricted identifier.(‡³™íJ$94f35164-ac4c-402e-bae8-f1adc4e38f27
+w
+java:S6213„":Rename this variable to not match a restricted identifier.(‡³™íJ$0b4b8480-b893-4281-8563-c1773fcb2cb5
+w
+java:S6213Ÿ":Rename this variable to not match a restricted identifier.(‡³™íJ$fea96537-14a0-4fdf-87e7-c9ad2fb360c0

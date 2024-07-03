@@ -1,0 +1,39 @@
+
+0
+java:S1220""Move this file to a named package.
+n
+java:S2293c"YReplace the type specification in this constructor call with the diamond operator ("<>").(†Ş(
+a	java:S112İ"FDefine and throw a dedicated exception instead of using a generic one.(âô«ûÿÿÿÿ
+i
+java:S3008O"NRename this field "EPS" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(×øèóúÿÿÿÿ
+z
+java:S1149]"eReplace the synchronized class "Vector" by an unsynchronized one such as "ArrayList" or "LinkedList".(¿ºÌ
+@	java:S106"+Replace this use of System.out by a logger.(¤‡½€
+A	java:S106”"+Replace this use of System.out by a logger.(õÓáË
+F	java:S106Â"+Replace this use of System.out by a logger.(û¶ğ¶ÿÿÿÿÿ
+A	java:S106â"+Replace this use of System.out by a logger.(Ü€»‹
+F	java:S106ã"+Replace this use of System.out by a logger.(Ú¨ó÷ûÿÿÿÿ
+A	java:S106ä"+Replace this use of System.out by a logger.(§á¨Û
+F	java:S106å"+Replace this use of System.out by a logger.(ªÓ¼áşÿÿÿÿ
+A	java:S106æ"+Replace this use of System.out by a logger.(Ï¤Êà
+F	java:S106ç"+Replace this use of System.out by a logger.(“áóíıÿÿÿÿ
+F	java:S106è"+Replace this use of System.out by a logger.(Ä”¹Óÿÿÿÿÿ
+F	java:S106é"+Replace this use of System.out by a logger.(¢²øıÿÿÿÿ
+A	java:S106ê"+Replace this use of System.out by a logger.(´ùïµ
+F	java:S106ë"+Replace this use of System.out by a logger.(œıü øÿÿÿÿ
+A	java:S106ì"+Replace this use of System.out by a logger.(¼êú—
+@	java:S106í"+Replace this use of System.out by a logger.(çä¯
+F	java:S106î"+Replace this use of System.out by a logger.(¨¦µÚûÿÿÿÿ
+F	java:S106ï"+Replace this use of System.out by a logger.(ÜƒÏ…øÿÿÿÿ
+n
+java:S3776ó"RRefactor this method to reduce its Cognitive Complexity from 35 to the 15 allowed.(ÙØ¤Şıÿÿÿÿ
+F	java:S106„"+Replace this use of System.out by a logger.(³¡Ô¡üÿÿÿÿ
+A	java:S106ß"+Replace this use of System.out by a logger.(²©Ê
+F	java:S106á"+Replace this use of System.out by a logger.(ÚÇÇÄøÿÿÿÿ
+A	java:S106ã"+Replace this use of System.out by a logger.(Ø„éˆ
+F	java:S106æ"+Replace this use of System.out by a logger.(¢±ÄÉúÿÿÿÿ
+A	java:S106ê"+Replace this use of System.out by a logger.(™ÌÒ´
+F	java:S106í"+Replace this use of System.out by a logger.(åæ¥ûÿÿÿÿ
+F	java:S106ï"+Replace this use of System.out by a logger.(ªÓ¼áşÿÿÿÿ
+â
+java:S6541ó"ÅA "Brain Method" was detected. Refactor it to reduce at least one of the following metrics: LOC from 95 to 64, Complexity from 23 to 14, Nesting Level from 5 to 2, Number of Variables from 28 to 6.(ÙØ¤Şıÿÿÿÿ
