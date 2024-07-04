@@ -2,7 +2,9 @@ package it.unibo.impl;
 
 import ilog.concert.IloNumVar;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Optional;
 
 public class BranchAndBoundProblem {
 
@@ -22,34 +24,51 @@ public class BranchAndBoundProblem {
     }
 
     private void resolve() {
-        do {
+        while (true) {
             if (this.dualProblem.solve()) {
                 this.dualProblem.solutionToString().ifPresent(System.out::println);
             } else {
                 System.err.println("Cannot resolve the model");
             }
             if (this.dualProblem.isSolutionInteger().isPresent() && !this.dualProblem.isSolutionInteger().get()) {
-                IloNumVar decisionVariable = this.findWhichVariableWillBeConstrained();
+                DecisionVariableImpl decisionVariable = this.findWhichVariableWillBeConstrained();
+                System.out.println(decisionVariable);
+                this.dualProblem.addSingleConstraint(
+                        0,
+                        Math.ceil(decisionVariable.getCurrentValue()),
+                        decisionVariable.getIndex()
+                );
             } else {
                 break;
             }
-
-        } while (true);
+        }
     }
 
-    private IloNumVar findWhichVariableWillBeConstrained() {
-        if (this.dualProblem.getVariables().isPresent()
-                && this.dualProblem.getVariableValues().isPresent()
-                && this.dualProblem.getVariables().get().length != 0
-                && this.dualProblem.getVariableValues().get().length != 0
+    private DecisionVariableImpl findWhichVariableWillBeConstrained() {
+        if (this.dualProblem.getProblemVariables().isPresent()
+                && !this.dualProblem.getProblemVariables().get().isEmpty()
         ) {
-            IloNumVar[] vars = this.dualProblem.getVariables().get();
-            double[] values = this.dualProblem.getVariableValues().get();
-//           trova la logica di quale scegliere per il branching cosi trovi la var e riprendi
+            ArrayList<DecisionVariableImpl> decisionVariables =
+                    new ArrayList<>(this.dualProblem.getProblemVariables().get());
 
-            return null;
+            Optional<DecisionVariableImpl> result = decisionVariables.stream()
+                    .filter(decisionVariable -> !decisionVariable.isInteger())
+                    .min(Comparator.comparingDouble(decisionVariable0 ->
+                            Math.abs(
+                                    decisionVariable0.getCurrentValue()
+                                            - Math.floor(decisionVariable0.getCurrentValue())
+                                            - 0.5
+                            )
+                    ));
+
+            if (result.isEmpty()) {
+                System.err.println("Cannot find the branching variable");
+                System.exit(1);
+                return null;
+            }
+            return result.get();
         } else {
-            System.err.println("Cannot find the variable");
+            System.err.println("Cannot find the branching variable");
             System.exit(1);
             return null;
         }

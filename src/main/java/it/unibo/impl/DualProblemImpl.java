@@ -5,6 +5,8 @@ import ilog.opl.IloCplex;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class DualProblemImpl {
@@ -12,6 +14,7 @@ public class DualProblemImpl {
     private IloCplex cplex;
     private boolean minimumProblem;
     private IloLPMatrix tableau;
+    private final ArrayList<DecisionVariableImpl> problemVariables = new ArrayList<>();
 
     public DualProblemImpl(boolean minimumProblem) {
         try {
@@ -32,7 +35,17 @@ public class DualProblemImpl {
                 throw new FileNotFoundException();
             }
             this.cplex.importModel(absolutePathToFile);
-            this.tableau = (IloLPMatrix) cplex.LPMatrixIterator().next();
+            this.tableau = this.cplex.getMatrix();
+
+            IloNumVar[] vars = this.tableau.getNumVars();
+            for (int i = 0; i < vars.length; i++) {
+                this.problemVariables.add(
+                        new DecisionVariableImpl(
+                                vars[1].getName(),
+                                i + 1
+                        ));
+            }
+
 
         } catch (IloException e) {
             System.err.println("Failed to instance the cplex model " + e);
@@ -47,11 +60,10 @@ public class DualProblemImpl {
     public final void addVariable() {
     }
 
-    public final void addConstraint(double lowerBound, double upperBound, int variableIndex, double variableCoefficient) {
-        int[] indices = {variableIndex};
-        double[] values = {variableCoefficient};
+    public final void addSingleConstraint(double lowerBound, double upperBound, int variableIndex) {
         try {
-            this.tableau.addRow(lowerBound, upperBound, indices, values);
+            this.cplex.addRange(lowerBound, this.tableau.getNumVar(variableIndex), upperBound);
+            this.tableau = this.cplex.getMatrix();
         } catch (IloException e) {
             System.err.println("File to add constraint" + e);
         }
@@ -63,7 +75,12 @@ public class DualProblemImpl {
 
     public final boolean solve() {
         try {
-            return this.cplex.solve();
+            if (this.cplex.solve()) {
+                this.updateProblemVariables();
+                return true;
+            }
+            return false;
+
         } catch (IloException e) {
             System.err.println("Filed to solve" + e);
             System.exit(1);
@@ -136,8 +153,17 @@ public class DualProblemImpl {
         }
     }
 
+    public Optional<List<DecisionVariableImpl>> getProblemVariables() {
+        try {
+            this.updateProblemVariables();
+            return Optional.of(this.problemVariables);
+        } catch (IloException e) {
+            System.err.println("Failed to get the variables");
+            return Optional.empty();
+        }
+    }
 
-    public Optional<double[]> getVariableValues() {
+    private Optional<double[]> getVariableValues() {
         if (this.getVariables().isEmpty() || this.getVariables().get().length == 0) {
             return Optional.empty();
         }
@@ -149,7 +175,7 @@ public class DualProblemImpl {
         }
     }
 
-    public Optional<IloNumVar[]> getVariables() {
+    private Optional<IloNumVar[]> getVariables() {
         try {
             return Optional.of(this.tableau.getNumVars());
         } catch (IloException e) {
@@ -167,11 +193,11 @@ public class DualProblemImpl {
         }
     }
 
-    final public Optional<Boolean> isSolutionInteger() {
+    public final Optional<Boolean> isSolutionInteger() {
         try {
             IloNumVar[] decisionVariables = this.tableau.getNumVars();
             for (IloNumVar decisionVariable : decisionVariables) {
-                if (Math.ceil(cplex.getValue(decisionVariable)) == Math.floor(cplex.getValue(decisionVariable))) {
+                if (Math.ceil(cplex.getValue(decisionVariable)) != Math.floor(cplex.getValue(decisionVariable))) {
                     return Optional.of(false);
                 }
             }
@@ -179,6 +205,14 @@ public class DualProblemImpl {
         } catch (IloException e) {
             System.err.println("Failed to check if the solution is optimal");
             return Optional.empty();
+        }
+    }
+
+    private void updateProblemVariables() throws IloException {
+        IloNumVar[] vars = this.tableau.getNumVars();
+        for (int i = 0; i < vars.length; i++) {
+            DecisionVariableImpl problemVariable = this.problemVariables.get(i);
+            problemVariable.setCurrentValue(cplex.getValue(vars[i]));
         }
     }
 
