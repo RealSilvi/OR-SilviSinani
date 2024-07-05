@@ -24,23 +24,25 @@ public class BranchAndBoundProblem {
     }
 
     private void resolve() {
-        while (true) {
-            if (this.dualProblem.solve()) {
-                this.dualProblem.solutionToString().ifPresent(System.out::println);
-            } else {
-                System.err.println("Cannot resolve the model");
-            }
-            if (this.dualProblem.isSolutionInteger().isPresent() && !this.dualProblem.isSolutionInteger().get()) {
-                DecisionVariableImpl decisionVariable = this.findWhichVariableWillBeConstrained();
-                System.out.println(decisionVariable);
-                this.dualProblem.addSingleConstraint(
-                        0,
-                        Math.ceil(decisionVariable.getCurrentValue()),
-                        decisionVariable.getIndex()
-                );
-            } else {
-                break;
-            }
+        while (this.dualProblem.solve() && Boolean.FALSE.equals(this.dualProblem.isSolutionInteger())) {
+            this.dualProblem.solutionToString().ifPresent(System.out::println);
+
+
+            DecisionVariableImpl decisionVariable = this.findWhichVariableWillBeConstrained();
+            System.out.println(decisionVariable);
+
+            this.dualProblem.addCut(
+                    Math.ceil(decisionVariable.getCurrentValue()),
+                    decisionVariable,
+                    false
+            );
+
+            this.dualProblem.addCut(
+                    Math.floor(decisionVariable.getCurrentValue()),
+                    decisionVariable,
+                    true
+            );
+
         }
     }
 
