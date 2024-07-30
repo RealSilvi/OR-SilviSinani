@@ -32,9 +32,7 @@ public class DecisionVariableImpl {
 
     public void setCurrentValue(double currentValue) {
         this.currentValue = currentValue;
-        if (Math.ceil(currentValue) == currentValue) {
-            this.setInteger(true);
-        }
+        this.setInteger(Math.ceil(currentValue) == Math.floor(currentValue));
     }
 
     public String getName() {

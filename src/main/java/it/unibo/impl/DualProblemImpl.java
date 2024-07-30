@@ -6,46 +6,53 @@ import ilog.opl.IloCplex;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DualProblemImpl {
+    private static final String MINIMIZE_SENSE_LABEL = "Minimize";
 
+    private boolean isMinimumProblem;
     private IloCplex cplex;
-    private boolean minimumProblem;
-    private IloLPMatrix tableau;
-    private final ArrayList<DecisionVariableImpl> problemVariables = new ArrayList<>();
+    private IloObjective objectiveFunction;
+    private final ArrayList<DecisionVariableImpl> currentValues = new ArrayList<>();
+    private final Map<Integer, IloRange> currentCuts = new HashMap<>();
 
-    public DualProblemImpl(boolean minimumProblem) {
-        try {
-            this.minimumProblem = minimumProblem;
-            this.cplex = new IloCplex();
-            this.setDualAlgorithm();
-            this.setQuiet();
-        } catch (IloException e) {
-            System.err.println("Failed to instance the cplex model " + e);
-            System.exit(1);
-        }
-    }
-
-    public DualProblemImpl(String absolutePathToFile, boolean minimumProblem) {
-        this(minimumProblem);
+    public DualProblemImpl(String absolutePathToFile) {
         try {
             if (!new File(absolutePathToFile).exists()) {
                 throw new FileNotFoundException();
             }
+            this.cplex = new IloCplex();
             this.cplex.importModel(absolutePathToFile);
-            this.tableau = this.cplex.getMatrix();
+            this.objectiveFunction = this.cplex.getObjective();
+            this.isMinimumProblem = MINIMIZE_SENSE_LABEL.equals(this.objectiveFunction.getSense().toString());
 
-            IloNumVar[] vars = this.tableau.getNumVars();
+            IloNumVar[] vars = this.cplex.getMatrix().getNumVars();
             for (int i = 0; i < vars.length; i++) {
-                this.problemVariables.add(
+                this.currentValues.add(
                         new DecisionVariableImpl(
                                 vars[i].getName(),
                                 i
                         ));
             }
+
+            this.setDualAlgorithm();
+            this.setQuiet();
+
+
+            this.printProblem("Original problem", this.cplex.getMatrix(), this.objectiveFunction);
+            this.printCurrentVariables();
+            this.solve();
+            this.printCurrentVariables();
+
+            this.addBranchCut(new BranchCutImpl(1, this.currentValues.get(0), false, 3));
+            this.solve();
+            this.printCurrentVariables();
+
+            this.deleteBranchCut(1);
+            this.solve();
+            this.printCurrentVariables();
 
         } catch (IloException e) {
             System.err.println("Failed to instance the cplex model " + e);
@@ -56,71 +63,135 @@ public class DualProblemImpl {
         }
     }
 
-    public final void addCut(double bound, DecisionVariableImpl decisionVariable, boolean upper) {
+    /**
+     * Adds a new branch cut to the model.
+     *
+     * @param branchCut the branch that will be added. Note: it must have a bran new id.
+     */
+    public final void addBranchCut(BranchCutImpl branchCut) {
         try {
             IloLinearNumExpr cut = this.cplex.linearNumExpr();
-            cut.addTerm(1, this.tableau.getNumVar(decisionVariable.getIndex()));
-            IloConstraint newConstraint;
+            cut.addTerm(1, this.cplex.getMatrix().getNumVar(branchCut.getDecisionVariable().getIndex()));
 
-            if (upper) {
-                newConstraint = this.cplex.addLe(cut, bound);
-            } else {
-                newConstraint = this.cplex.addGe(cut, bound);
-            }
+            IloRange newConstraint = branchCut.isUpper() ?
+                    this.cplex.le(cut, branchCut.getBound()) :
+                    this.cplex.ge(cut, branchCut.getBound());
 
-            System.out.println("New Constraint: " + newConstraint);
+            System.out.println("\n\nAdding new constraint: " + newConstraint.toString());
 
-            this.tableau = this.cplex.getMatrix();
-
+            this.currentCuts.put(branchCut.getId(), newConstraint);
+            this.cplex.add(newConstraint);
         } catch (IloException e) {
             System.err.println("File to add constraint" + e);
             System.exit(1);
         }
     }
 
-    public final void endDualProblem() {
-        this.cplex.end();
+    /**
+     * Delete a branch cut added by {@code addBranchCut}
+     *
+     * @param branchCutId branch id.
+     */
+    public final void deleteBranchCut(int branchCutId) {
+        try {
+            System.out.println("\n\nDeleting constraint: " + this.currentCuts.get(branchCutId).toString());
+            this.cplex.remove(this.currentCuts.get(branchCutId));
+            this.currentCuts.remove(branchCutId);
+        } catch (IloException e) {
+            System.err.println("File to add constraint" + e);
+            System.exit(1);
+        }
     }
 
-    public final boolean solve() {
+    /**
+     * Solves the current model updating the current values of the variables.
+     */
+    public final void solve() {
         try {
             if (this.cplex.solve()) {
-                this.updateProblemVariables();
-                return true;
+                this.updateCurrentValues();
+                this.printSolution(this.cplex);
             }
-            return false;
-
         } catch (IloException e) {
             System.err.println("Filed to solve" + e);
             System.exit(1);
         }
-        return false;
+
     }
 
-    public final Optional<String> solutionToString() {
+
+    /**
+     * Prints by {@code System.out} the given problem.
+     *
+     * @param problemName       the name of the given problem.
+     * @param problemTableau    the matrix describing the problem.
+     * @param objectiveFunction the objective function of the problem
+     */
+    public final void printProblem(String problemName, IloLPMatrix problemTableau, IloObjective objectiveFunction) {
         StringBuilder status = new StringBuilder();
         try {
             status.append("\n\n");
-            status.append("SOLUTION");
-            status.append('\n');
-            status.append("Solution status = ");
+            status.append(problemName.toUpperCase());
+            status.append("\n\nVariables");
+            IloNumVar[] decisionVariables = problemTableau.getNumVars();
+            for (IloNumVar decisionVariable : decisionVariables) {
+                status.append("\n");
+                status.append(decisionVariable.getLB());
+                status.append(" < ");
+                status.append(decisionVariable.getName());
+                status.append(" < ");
+                status.append(decisionVariable.getUB());
+            }
+
+            status.append("\n\nConstraints");
+            IloRange[] constraints = problemTableau.getRanges();
+            for (IloRange constraint : constraints) {
+                status.append("\n");
+                status.append(constraint.getName());
+                status.append(" : ");
+                status.append(constraint.getLB());
+                status.append(" < ");
+                status.append(constraint.getExpr().toString());
+                status.append(" < ");
+                status.append(constraint.getUB());
+            }
+
+            status.append("\n\nObjective");
+            status.append("\n");
+            status.append(this.isMinimumProblem ? "min " : "max ");
+            status.append(objectiveFunction.getName());
+            status.append(" : ");
+            status.append(objectiveFunction.getExpr().toString());
+
+            System.out.println(status);
+        } catch (IloException e) {
+            System.err.println("\n\nFailed to print the problem.");
+            System.exit(1);
+        }
+
+    }
+
+    /**
+     * Prints by {@code System.out} the given problem.
+     *
+     * @param cplex
+     */
+    public final void printSolution(IloCplex cplex) {
+        StringBuilder status = new StringBuilder();
+        try {
+            status.append("\n\nSOLUTION");
+            status.append("\n\nInfo ");
+            status.append("\nSolution status = ");
             status.append(cplex.getStatus());
-            status.append('\n');
-            status.append("Solution value  = ");
+            status.append("\nSolution value  = ");
             status.append(cplex.getObjValue());
 
-            status.append('\n');
-            status.append("Solution result integer  = ");
-            status.append(this.isSolutionInteger());
-            status.append('\n');
+            status.append("\nSolution result integer  = ");
+            status.append(this.areCurrentVariablesInteger());
 
-            IloNumVar[] decisionVariables = this.tableau.getNumVars();
-            IloRange[] constraints = this.tableau.getRanges();
-
-            status.append("\n\n");
-            status.append("VARIABLES");
-            status.append("\n");
-            for (IloNumVar decisionVariable : decisionVariables) {
+            status.append("\n\nVariables");
+            for (IloNumVar decisionVariable : this.cplex.getMatrix().getNumVars()) {
+                status.append("\n");
                 status.append(decisionVariable.getName());
                 status.append(" => {[ Value: ");
                 status.append(cplex.getValue(decisionVariable));
@@ -129,81 +200,111 @@ public class DualProblemImpl {
                 status.append(" ], [ Reduced cost: ");
                 status.append(cplex.getReducedCost(decisionVariable));
                 status.append(" ]}");
-                status.append("\n");
             }
 
-            status.append("\n\n");
-            status.append("CONSTRAINTS");
-            status.append("\n");
-            for (IloRange constraint : constraints) {
+            status.append("\n\nConstraints");
+            for (IloRange constraint : this.cplex.getMatrix().getRanges()) {
+                status.append("\n");
                 status.append(constraint.getName());
                 status.append(" => {[ Slack: ");
                 status.append(cplex.getSlack(constraint));
                 status.append(" ], [ Pi: ");
                 status.append(cplex.getDual(constraint));
                 status.append(" ]}");
-                status.append("\n");
             }
 
-            return Optional.of(status.toString());
+            for (Map.Entry<Integer, IloRange> constraint : this.currentCuts.entrySet()) {
+                status.append("\nbranchCut");
+                status.append(constraint.getKey().toString());
+                status.append(" => {[ Slack: ");
+                status.append(cplex.getSlack(constraint.getValue()));
+                status.append(" ], [ Pi: ");
+                status.append(cplex.getDual(constraint.getValue()));
+                status.append(" ]}");
+            }
+
+            System.out.println(status);
         } catch (IloException e) {
-            System.err.println("Failed to convert the solution on string");
-            return Optional.empty();
+            System.err.println("Failed to print the solution");
+            System.exit(1);
         }
     }
 
-    public Optional<Double> getOptimalValue() {
-        try {
-            return Optional.of(this.cplex.getObjValue());
-        } catch (IloException e) {
-            System.err.println("Failed to retrieve the solution");
-            return Optional.empty();
+    /**
+     * Prints by {@code System.out} the current values of the model.
+     */
+    public final void printCurrentVariables() {
+        StringBuilder status = new StringBuilder();
+        status.append("\n\nCURRENT VALUES OF VARIABLES");
+        for (DecisionVariableImpl decisionVariable : this.currentValues) {
+            status.append("\n");
+            status.append(decisionVariable.toString());
         }
+        System.out.println(status);
     }
 
-    public Optional<List<DecisionVariableImpl>> getProblemVariables() {
-        try {
-            this.updateProblemVariables();
-            return Optional.of(this.problemVariables);
-        } catch (IloException e) {
-            System.err.println("Failed to get the variables");
-            return Optional.empty();
-        }
-    }
+//    public final void endDualProblem() {
+//        this.cplex.end();
+//    }
+//
+//
+//    public Optional<Double> getOptimalValue() {
+//        try {
+//            return Optional.of(this.cplex.getObjValue());
+//        } catch (IloException e) {
+//            System.err.println("Failed to retrieve the solution");
+//            return Optional.empty();
+//        }
+//    }
+//
+//    public Optional<List<DecisionVariableImpl>> getProblemVariables() {
+//        try {
+//            this.updateProblemVariables();
+//            return Optional.of(this.problemVariables);
+//        } catch (IloException e) {
+//            System.err.println("Failed to get the variables");
+//            return Optional.empty();
+//        }
+//    }
+//
+//    private Optional<double[]> getVariableValues() {
+//        if (this.getVariables().isEmpty() || this.getVariables().get().length == 0) {
+//            return Optional.empty();
+//        }
+//        try {
+//            return Optional.of(this.cplex.getValues(this.getVariables().get()));
+//        } catch (IloException e) {
+//            System.err.println("Failed to retrieve the variables");
+//            return Optional.empty();
+//        }
+//    }
+//
+//    private Optional<IloNumVar[]> getVariables() {
+//        try {
+//            return Optional.of(this.tableau.getNumVars());
+//        } catch (IloException e) {
+//            System.err.println("Failed to retrieve the variables");
+//            return Optional.empty();
+//        }
+//    }
+//
+//    private Optional<Boolean> isOptimal() throws IloException {
+//        try {
+//            return Optional.of(this.cplex.getStatus() == IloCplex.Status.Optimal);
+//        } catch (IloException e) {
+//            System.err.println("Failed to check if the solution is optimal");
+//            return Optional.empty();
+//        }
+//    }
+//
 
-    private Optional<double[]> getVariableValues() {
-        if (this.getVariables().isEmpty() || this.getVariables().get().length == 0) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(this.cplex.getValues(this.getVariables().get()));
-        } catch (IloException e) {
-            System.err.println("Failed to retrieve the variables");
-            return Optional.empty();
-        }
-    }
-
-    private Optional<IloNumVar[]> getVariables() {
-        try {
-            return Optional.of(this.tableau.getNumVars());
-        } catch (IloException e) {
-            System.err.println("Failed to retrieve the variables");
-            return Optional.empty();
-        }
-    }
-
-    private Optional<Boolean> isOptimal() throws IloException {
-        try {
-            return Optional.of(this.cplex.getStatus() == IloCplex.Status.Optimal);
-        } catch (IloException e) {
-            System.err.println("Failed to check if the solution is optimal");
-            return Optional.empty();
-        }
-    }
-
-    public final Boolean isSolutionInteger() {
-
-        for (DecisionVariableImpl decisionVariable : this.problemVariables) {
+    /**
+     * Check if current values of the variables result integer.
+     *
+     * @return true if all the current values of the variables result integer.
+     */
+    public final Boolean areCurrentVariablesInteger() {
+        for (DecisionVariableImpl decisionVariable : this.currentValues) {
             if (!decisionVariable.isInteger()) {
                 return false;
             }
@@ -211,23 +312,36 @@ public class DualProblemImpl {
         return true;
     }
 
-    private void updateProblemVariables() throws IloException {
-        IloNumVar[] vars = this.tableau.getNumVars();
+    /**
+     * Updates the current values of the variables from last solution.
+     *
+     * @throws IloException
+     */
+    private void updateCurrentValues() throws IloException {
+        IloNumVar[] vars = this.cplex.getMatrix().getNumVars();
         for (int i = 0; i < vars.length; i++) {
-            DecisionVariableImpl problemVariable = this.problemVariables.get(i);
+            DecisionVariableImpl problemVariable = this.currentValues.get(i);
             problemVariable.setCurrentValue(cplex.getValue(vars[i]));
         }
     }
 
+
+    /**
+     * Activate only the dual algorithm.
+     *
+     * @throws IloException
+     */
     private void setDualAlgorithm() throws IloException {
         this.cplex.setParam(IloCplex.Param.RootAlgorithm, IloCplex.Algorithm.Dual);
     }
 
+    /**
+     * Turn off presolve and logging.
+     *
+     * @throws IloException
+     */
     private void setQuiet() throws IloException {
-        // turn off presolve to prevent it from completely solving the model
-        // before entering the actual LP optimizer
         this.cplex.setParam(IloCplex.Param.Preprocessing.Presolve, false);
-        // turn off logging
         this.cplex.setOut(null);
     }
 }
