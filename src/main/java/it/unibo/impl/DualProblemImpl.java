@@ -5,9 +5,7 @@ import ilog.opl.IloCplex;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class DualProblemImpl {
     private static final String MINIMIZE_SENSE_LABEL = "Minimize";
@@ -24,6 +22,9 @@ public class DualProblemImpl {
                 throw new FileNotFoundException();
             }
             this.cplex = new IloCplex();
+            this.setDualAlgorithm();
+            this.setQuiet();
+
             this.cplex.importModel(absolutePathToFile);
             this.objectiveFunction = this.cplex.getObjective();
             this.isMinimumProblem = MINIMIZE_SENSE_LABEL.equals(this.objectiveFunction.getSense().toString());
@@ -37,22 +38,20 @@ public class DualProblemImpl {
                         ));
             }
 
-            this.setDualAlgorithm();
-            this.setQuiet();
-
 
             this.printProblem("Original problem", this.cplex.getMatrix(), this.objectiveFunction);
-            this.printCurrentVariables();
-            this.solve();
-            this.printCurrentVariables();
 
-            this.addBranchCut(new BranchCutImpl(1, this.currentValues.get(0), false, 3));
-            this.solve();
-            this.printCurrentVariables();
-
-            this.deleteBranchCut(1);
-            this.solve();
-            this.printCurrentVariables();
+//            this.printCurrentVariables();
+//            this.solve();
+//            this.printCurrentVariables();
+//
+//            this.addBranchCut(new BranchCutImpl(1, this.currentValues.get(0), false, 3));
+//            this.solve();
+//            this.printCurrentVariables();
+//
+//            this.deleteBranchCut(1);
+//            this.solve();
+//            this.printCurrentVariables();
 
         } catch (IloException e) {
             System.err.println("Failed to instance the cplex model " + e);
@@ -116,7 +115,6 @@ public class DualProblemImpl {
             System.err.println("Filed to solve" + e);
             System.exit(1);
         }
-
     }
 
 
@@ -310,6 +308,58 @@ public class DualProblemImpl {
             }
         }
         return true;
+    }
+
+    /**
+     * The current value of the objective function.
+     *
+     * @return the current value of the objective function.
+     * Note for impossible infinity is returned as Double.MAX or Double.Min
+     */
+    public final double getCurrentSolution() {
+        try {
+            return this.cplex.getObjValue();
+        } catch (IloException e) {
+            return this.isMinimumProblem ? Double.MAX_VALUE : Double.MIN_VALUE;
+        }
+    }
+
+    /**
+     * @return current variables
+     */
+    public final List<DecisionVariableImpl> getCurrentValues() {
+        return this.currentValues;
+    }
+
+    /**
+     * @return true if the decision variable passed has positive coefficient in the objective function.
+     */
+    public final boolean doesDecisionVariableGrowTheObjective(DecisionVariableImpl decisionVariable) {
+        try {
+            if (this.objectiveFunction.getExpr() instanceof IloLinearNumExpr linearObjectiveFunction) {
+                IloLinearNumExprIterator it = linearObjectiveFunction.linearIterator();
+                while (it.hasNext()) {
+                    if (it.nextNumVar().getName().equals(decisionVariable.getName())) {
+                        return it.getValue() > 0;
+                    }
+                }
+            }
+
+            System.err.println("Failed to retrive decision variable's coefficient from the objective");
+            System.exit(1);
+            return false;
+        } catch (IloException e) {
+            System.err.println("Failed to retrive decision variable's coefficient from the objective");
+            System.exit(1);
+            return false;
+        }
+    }
+
+    /**
+     * @return true if the objective function sense is minimum.
+     */
+    public boolean isMinimumProblem() {
+        return this.isMinimumProblem;
     }
 
     /**
