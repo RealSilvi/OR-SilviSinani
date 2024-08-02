@@ -105,16 +105,19 @@ public class DualProblemImpl {
     /**
      * Solves the current model updating the current values of the variables.
      */
-    public final void solve() {
+    public final boolean solve() {
         try {
             if (this.cplex.solve()) {
                 this.updateCurrentValues();
                 this.printSolution(this.cplex);
+                return true;
             }
+            return false;
         } catch (IloException e) {
             System.err.println("Filed to solve" + e);
             System.exit(1);
         }
+        return false;
     }
 
 
@@ -148,9 +151,9 @@ public class DualProblemImpl {
                 status.append(constraint.getName());
                 status.append(" : ");
                 status.append(constraint.getLB());
-                status.append(" < ");
+                status.append(" <= ");
                 status.append(constraint.getExpr().toString());
-                status.append(" < ");
+                status.append(" <= ");
                 status.append(constraint.getUB());
             }
 

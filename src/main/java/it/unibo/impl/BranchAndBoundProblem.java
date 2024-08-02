@@ -19,7 +19,11 @@ public class BranchAndBoundProblem {
 
     private void resolve() {
         System.out.println("ZBEST " + this.bestSolution);
-        this.dualProblemResolver.solve();
+
+        if(!this.dualProblemResolver.solve()){
+            return;
+        }
+
         if (isCurrentSolutionBrakingTheBranch()) {
             if(isCurrentSolutionIsInteger() && !isCurrentSolutionBoundWorse()){
                 this.bestSolution= (int) this.dualProblemResolver.getCurrentSolution();
@@ -61,7 +65,7 @@ public class BranchAndBoundProblem {
     }
 
     private boolean isCurrentSolutionIsInteger() {
-        return (Math.floor(this.dualProblemResolver.getCurrentSolution()) == Math.ceil(this.dualProblemResolver.getCurrentSolution())) ||
+        return (Math.floor(this.dualProblemResolver.getCurrentSolution()) == Math.ceil(this.dualProblemResolver.getCurrentSolution())) &&
                 this.dualProblemResolver.areCurrentVariablesInteger();
     }
 
