@@ -15,18 +15,27 @@ public class BranchAndBoundProblem {
         this.minimumProblem = this.dualProblemResolver.isMinimumProblem();
         this.bestSolution = this.minimumProblem ? Integer.MAX_VALUE : Integer.MIN_VALUE;
         this.resolve();
+        this.printSolution();
+        this.dualProblemResolver.endDualProblem();
+    }
+
+    private void printSolution() {
+        System.out.println("\n\nSOLUTION");
+        System.out.println("obj = " + bestSolution);
+
     }
 
     private void resolve() {
-        System.out.println("ZBEST " + this.bestSolution);
-
-        if(!this.dualProblemResolver.solve()){
+        if (!this.dualProblemResolver.solve()) {
             return;
         }
 
+        System.out.println("\nBest integer bound");
+        System.out.println("obj = " + this.bestSolution);
+
         if (isCurrentSolutionBrakingTheBranch()) {
-            if(isCurrentSolutionIsInteger() && !isCurrentSolutionBoundWorse()){
-                this.bestSolution= (int) this.dualProblemResolver.getCurrentSolution();
+            if (isCurrentSolutionIsInteger() && !isCurrentSolutionBoundWorse()) {
+                this.bestSolution = (int) this.dualProblemResolver.getCurrentSolution();
             }
             return;
         }
@@ -52,8 +61,6 @@ public class BranchAndBoundProblem {
     }
 
     private boolean isCurrentSolutionBrakingTheBranch() {
-        System.out.println("isCurrentSolutionIsImpossible =>" + isCurrentSolutionIsImpossible());
-        System.out.println("isCurrentSolutionIsInteger =>" + isCurrentSolutionIsInteger());
         return isCurrentSolutionIsImpossible() ||
                 isCurrentSolutionIsInteger() ||
                 isCurrentSolutionBoundWorse();
@@ -70,7 +77,6 @@ public class BranchAndBoundProblem {
     }
 
     private boolean isCurrentSolutionBoundWorse() {
-        System.out.println("isCurrentSolutionBoundWorseMin =>" + (this.dualProblemResolver.getCurrentSolution() > this.bestSolution && this.minimumProblem));
         return (this.dualProblemResolver.getCurrentSolution() > this.bestSolution && this.minimumProblem) ||
                 (this.dualProblemResolver.getCurrentSolution() < this.bestSolution && !this.minimumProblem);
     }

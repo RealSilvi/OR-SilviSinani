@@ -1,4 +1,4 @@
-NAME example05.mps
+NAME example06.mps
 OBJSENSE
  MAX
 ROWS

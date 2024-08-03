@@ -1,16 +1,16 @@
 package it.unibo.impl;
 
+import it.unibo.api.Presentation;
+
 import java.io.PrintStream;
 import java.util.Scanner;
 
-public class PresentationImpl {
+public class PresentationImpl implements Presentation {
 
-    private BranchAndBoundProblem problem;
     private static final Scanner input = new Scanner(System.in);
     private static final PrintStream output = System.out;
 
     public PresentationImpl() {
-
         this.start();
     }
 
@@ -20,11 +20,21 @@ public class PresentationImpl {
         String answer;
         do {
             answer = input.next();
-        } while (!answer.equals("r") && !answer.equals("e") && !answer.equals("q"));
+        } while (!answer.equals("q") &&
+                !answer.equals("1") &&
+                !answer.equals("2") &&
+                !answer.equals("3") &&
+                !answer.equals("4") &&
+                !answer.equals("5") &&
+                !answer.equals("6"));
 
         switch (answer.charAt(0)) {
-            case 'r' -> runBranch();
-            case 'e' -> examplesBranch();
+            case '1' -> runProgram(Presentation.EXAMPLE01);
+            case '2' -> runProgram(Presentation.EXAMPLE02);
+            case '3' -> runProgram(Presentation.EXAMPLE03);
+            case '4' -> runProgram(Presentation.EXAMPLE04);
+            case '5' -> runProgram(Presentation.EXAMPLE05);
+            case '6' -> runProgram(Presentation.EXAMPLE06);
             case 'q' -> System.exit(0);
             default -> {
                 System.err.println("Reading char failed in the branch choice");
@@ -46,54 +56,17 @@ public class PresentationImpl {
         output.println("Execution:");
         output.println();
         output.println("Enter a value:");
-        output.println("r - run the program");
-        output.println("e - examples");
+        output.println("1 - run example01");
+        output.println("2 - run example02");
+        output.println("3 - run example03");
+        output.println("4 - run example04");
+        output.println("5 - run example05");
+        output.println("6 - run example06");
         output.println("q - quit");
-    }
-
-    private boolean askIsMinProblem() {
         output.println();
-        output.println("Do you want to solve a maximum or minimum problem");
-        output.println("Enter a value:");
-        output.println("max - for maximum problems");
-        output.println("min - for minimum problems");
-        output.println("q - quit");
-        String answer;
-        do {
-            answer = input.next();
-        } while (!answer.equals("max") && !answer.equals("min") && !answer.equals("q"));
-
-        return answer.equals("min");
     }
 
-    private void examplesBranch() {
-        output.println();
-        output.println("Examples");
-        output.println("Enter a value:");
-        output.println("a - for maximum problems");
-        output.println("b - for minimum problems");
-        output.println("q - quit");
-        String answer;
-        do {
-            answer = input.next();
-        } while (!answer.equals("a") && !answer.equals("b") && !answer.equals("q"));
-
-        switch (answer.charAt(0)) {
-            case 'a' ->
-                    this.problem = new BranchAndBoundProblem("/Users/silvisinani/code/Java/RoSinaniSilvi/src/main/java/ibm_ilog_cplex/official_examples/example.mps");
-            case 'b' ->
-                    this.problem = new BranchAndBoundProblem("/Users/silvisinani/code/Java/RoSinaniSilvi/src/main/java/ibm_ilog_cplex/official_examples/example.mps");
-            case 'q' -> System.exit(0);
-            default -> {
-                System.err.println("Reading char failed in the branch choice");
-                System.exit(1);
-            }
-        }
-
+    private void runProgram(String path){
+        new BranchAndBoundProblem(path);
     }
-
-    private void runBranch() {
-        output.println("Examples");
-    }
-
 }
