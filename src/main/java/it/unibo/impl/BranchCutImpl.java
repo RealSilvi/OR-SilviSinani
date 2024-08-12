@@ -32,12 +32,17 @@ public class BranchCutImpl {
 
     @Override
     public String toString() {
-        return "BranchCutImpl{" +
-                "id=" + this.id +
-                ", decisionVariable=" + this.decisionVariable.toString() +
-                ", isUpper=" + this.upper +
-                ", bound=" + this.bound +
-                '}';
+        StringBuilder out = new StringBuilder();
+        out.append("Branch cut ");
+        out.append(this.getId());
+        out.append(" : {\n\t");
+        out.append(this.getDecisionVariable());
+        out.append("\n\tIs Upper Bound : ");
+        out.append(this.isUpper());
+        out.append("\n\tBound : ");
+        out.append(this.getBound());
+        out.append(" \n}");
+        return out.toString();
     }
 
 }

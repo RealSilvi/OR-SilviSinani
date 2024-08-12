@@ -7,6 +7,8 @@ public class BranchAndBoundProblem {
     private final DualProblemImpl dualProblemResolver;
     private boolean minimumProblem;
     private int bestSolution;
+    private DecisionTreeImpl decisionTree;
+    private Optional<DecisionTreeImpl> solution;
 
     private int branchCutsCount = 0;
 
@@ -14,28 +16,40 @@ public class BranchAndBoundProblem {
         this.dualProblemResolver = new DualProblemImpl(pathToFile);
         this.minimumProblem = this.dualProblemResolver.isMinimumProblem();
         this.bestSolution = this.minimumProblem ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+        this.solution = Optional.empty();
         this.resolve();
         this.printSolution();
         this.dualProblemResolver.endDualProblem();
     }
 
     private void printSolution() {
-        System.out.println("\n\nSOLUTION");
-        System.out.println("obj = " + bestSolution);
-
+        System.out.println("\n\n||| SOLUTION |||");
+        this.solution.ifPresent(System.out::println);
     }
 
     private void resolve() {
         if (!this.dualProblemResolver.solve()) {
+            this.decisionTree.setBranchProblemSolution(this.minimumProblem ? Double.MAX_VALUE : Double.MIN_VALUE);
+            this.decisionTree.setCurrentValues(this.dualProblemResolver.getCurrentValues());
             return;
         }
 
-        System.out.println("\nBest integer bound");
-        System.out.println("obj = " + this.bestSolution);
+        if (this.decisionTree == null) {
+            this.decisionTree = new DecisionTreeImpl(
+                    DecisionTreeImpl.ROOT_ID,
+                    this.dualProblemResolver.getCurrentValues(),
+                    this.dualProblemResolver.getCurrentCuts(),
+                    this.dualProblemResolver.getCurrentSolution()
+            );
+        } else {
+            this.decisionTree.setBranchProblemSolution(this.dualProblemResolver.getCurrentSolution());
+            this.decisionTree.setCurrentValues(this.dualProblemResolver.getCurrentValues());
+        }
 
         if (isCurrentSolutionBrakingTheBranch()) {
             if (isCurrentSolutionIsInteger() && !isCurrentSolutionBoundWorse()) {
                 this.bestSolution = (int) this.dualProblemResolver.getCurrentSolution();
+                this.solution = Optional.of(this.decisionTree);
             }
             return;
         }
@@ -46,17 +60,23 @@ public class BranchAndBoundProblem {
         }
 
         ArrayList<BranchCutImpl> branches = new ArrayList<>();
+        this.branchCutsCount++;
         branches.add(new BranchCutImpl(branchCutsCount, decisionVariable.get(), true, (int) Math.floor(decisionVariable.get().getCurrentValue())));
-        this.branchCutsCount += 1;
+        this.branchCutsCount++;
         branches.add(new BranchCutImpl(branchCutsCount, decisionVariable.get(), false, (int) Math.ceil(decisionVariable.get().getCurrentValue())));
-        this.branchCutsCount += 1;
 
         branches = new ArrayList<>(sortWhichBranchToSolveFirst(branches));
 
         for (BranchCutImpl branch : branches) {
             this.dualProblemResolver.addBranchCut(branch);
+
+            this.decisionTree.addChild(branch.getId(), (branchCutsCount == branch.getId()) ? DecisionTreeImpl.RIGHT_DIRECTION : DecisionTreeImpl.LEFT_DIRECTION, this.dualProblemResolver.getCurrentCuts());
+            this.decisionTree.getChild(branch.getId()).ifPresent(child -> this.decisionTree = child);
+
             this.resolve();
-            this.dualProblemResolver.deleteBranchCut(branch.getId());
+
+            this.decisionTree.getParent().ifPresent(parent -> this.decisionTree = parent);
+            this.dualProblemResolver.deleteBranchCut(branch);
         }
     }
 

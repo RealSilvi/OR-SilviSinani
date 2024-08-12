@@ -21,7 +21,7 @@ public class DualProblemImpl {
     private IloCplex cplex;
     private IloObjective objectiveFunction;
     private final ArrayList<DecisionVariableImpl> currentValues = new ArrayList<>();
-    private final Map<Integer, IloRange> currentCuts = new HashMap<>();
+    private final Map<BranchCutImpl, IloRange> currentCuts = new HashMap<>();
 
     /**
      * Define a dual PL problem importing one from the mps file.
@@ -74,10 +74,10 @@ public class DualProblemImpl {
                     this.cplex.le(cut, branchCut.getBound()) :
                     this.cplex.ge(cut, branchCut.getBound());
 
-            System.out.println("\nADDING CUT");
+            System.out.println("\n\n+++ ADDING CUT +++");
             System.out.println("branchCut" + branchCut.getId() + ": " + newConstraint.toString());
 
-            this.currentCuts.put(branchCut.getId(), newConstraint);
+            this.currentCuts.put(branchCut, newConstraint);
             this.cplex.add(newConstraint);
         } catch (IloException e) {
             System.err.println("File to add constraint" + e);
@@ -88,15 +88,15 @@ public class DualProblemImpl {
     /**
      * Delete a branch cut added by {@code addBranchCut}
      *
-     * @param branchCutId branch id.
+     * @param branchCut branch to delete.
      */
-    public final void deleteBranchCut(int branchCutId) {
+    public final void deleteBranchCut(BranchCutImpl branchCut) {
         try {
-            System.out.println("\nREMOVING CUT");
-            System.out.println("branchCut" + branchCutId + ": " + this.currentCuts.get(branchCutId).toString());
+            System.out.println("\n\n--- REMOVING CUT ---");
+            System.out.println("branchCut" + branchCut.getId() + ": " + this.currentCuts.get(branchCut).toString());
 
-            this.cplex.remove(this.currentCuts.get(branchCutId));
-            this.currentCuts.remove(branchCutId);
+            this.cplex.remove(this.currentCuts.get(branchCut));
+            this.currentCuts.remove(branchCut);
         } catch (IloException e) {
             System.err.println("File to add constraint" + e);
             System.exit(1);
@@ -213,13 +213,11 @@ public class DualProblemImpl {
                 status.append(" ]}");
             }
 
-            for (Map.Entry<Integer, IloRange> constraint : this.currentCuts.entrySet()) {
+            for (Map.Entry<BranchCutImpl, IloRange> constraint : this.currentCuts.entrySet()) {
                 status.append("\nbranchCut");
-                status.append(constraint.getKey().toString());
+                status.append(constraint.getKey().getId());
                 status.append(" => {[ Slack: ");
                 status.append(cplex.getSlack(constraint.getValue()));
-                status.append(" ], [ Pi: ");
-                status.append(cplex.getDual(constraint.getValue()));
                 status.append(" ]}");
             }
 
@@ -228,19 +226,6 @@ public class DualProblemImpl {
             System.err.println("Failed to print the solution");
             System.exit(1);
         }
-    }
-
-    /**
-     * Prints by {@code System.out} the current values of the model.
-     */
-    public final void printCurrentVariables() {
-        StringBuilder status = new StringBuilder();
-        status.append("\n\nCURRENT VALUES OF VARIABLES");
-        for (DecisionVariableImpl decisionVariable : this.currentValues) {
-            status.append("\n");
-            status.append(decisionVariable.toString());
-        }
-        System.out.println(status);
     }
 
     public final void endDualProblem() {
@@ -279,7 +264,18 @@ public class DualProblemImpl {
      * @return current variables
      */
     public final List<DecisionVariableImpl> getCurrentValues() {
-        return this.currentValues;
+        List<DecisionVariableImpl> values = new ArrayList<>();
+        for (DecisionVariableImpl value : this.currentValues) {
+            values.add(new DecisionVariableImpl(value.getName(), value.getIndex(), value.getCurrentValue()));
+        }
+        return values;
+    }
+
+    /**
+     * @return current cuts
+     */
+    public final List<BranchCutImpl> getCurrentCuts() {
+        return this.currentCuts.keySet().stream().toList();
     }
 
     /**

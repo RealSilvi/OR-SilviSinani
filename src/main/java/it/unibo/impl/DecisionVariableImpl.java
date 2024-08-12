@@ -18,12 +18,18 @@ public class DecisionVariableImpl {
 
     @Override
     public String toString() {
-        return "DecisionVariableImpl{" +
-                "name='" + name + '\'' +
-                ", index=" + index +
-                ", currentValue=" + currentValue +
-                ", integer=" + integer +
-                '}';
+        StringBuilder out = new StringBuilder();
+        out.append("Decision Variable ");
+        out.append(this.getName());
+        out.append(" : [ ");
+        out.append("index = ");
+        out.append(this.getIndex());
+        out.append(", value = ");
+        out.append(this.getCurrentValue());
+        out.append(", isInteger = ");
+        out.append(this.isInteger());
+        out.append(" ]");
+        return out.toString();
     }
 
     public void setInteger(boolean integer) {
