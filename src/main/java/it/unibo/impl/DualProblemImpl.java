@@ -2,6 +2,9 @@ package it.unibo.impl;
 
 import ilog.concert.*;
 import ilog.opl.IloCplex;
+import it.unibo.api.BranchCut;
+import it.unibo.api.DecisionVariable;
+import it.unibo.api.DualProblem;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,19 +12,15 @@ import java.util.*;
 
 /**
  * Through this class is possible to solve PL problems only using the dual algorithm.
- * Features: You can add and remove cuts to solve new problems builded from the imported one.
+ * Features: You can add and remove cuts to solve new problems built from the imported one.
  */
-public class DualProblemImpl {
-    /**
-     * Defines the value of minimize sense of the objective.
-     */
-    private static final String MINIMIZE_SENSE_LABEL = "Minimize";
+public class DualProblemImpl implements DualProblem {
 
     private boolean isMinimumProblem;
     private IloCplex cplex;
     private IloObjective objectiveFunction;
-    private final ArrayList<DecisionVariableImpl> currentValues = new ArrayList<>();
-    private final Map<BranchCutImpl, IloRange> currentCuts = new HashMap<>();
+    private final ArrayList<DecisionVariable> currentValues = new ArrayList<>();
+    private final Map<BranchCut, IloRange> currentCuts = new HashMap<>();
 
     /**
      * Define a dual PL problem importing one from the mps file.
@@ -61,11 +60,9 @@ public class DualProblemImpl {
     }
 
     /**
-     * Adds a new branch cut to the model.
-     *
-     * @param branchCut the branch that will be added. Note: it must have a bran new id.
+     * {@inheritDoc}
      */
-    public final void addBranchCut(BranchCutImpl branchCut) {
+    public final void addBranchCut(BranchCut branchCut) {
         try {
             IloLinearNumExpr cut = this.cplex.linearNumExpr();
             cut.addTerm(1, this.cplex.getMatrix().getNumVar(branchCut.getDecisionVariable().getIndex()));
@@ -86,11 +83,9 @@ public class DualProblemImpl {
     }
 
     /**
-     * Delete a branch cut added by {@code addBranchCut}
-     *
-     * @param branchCut branch to delete.
+     * {@inheritDoc}
      */
-    public final void deleteBranchCut(BranchCutImpl branchCut) {
+    public final void deleteBranchCut(BranchCut branchCut) {
         try {
             System.out.println("\n\n--- REMOVING CUT ---");
             System.out.println("branchCut" + branchCut.getId() + ": " + this.currentCuts.get(branchCut).toString());
@@ -104,7 +99,7 @@ public class DualProblemImpl {
     }
 
     /**
-     * Solves the current model updating the current values of the variables.
+     * {@inheritDoc}
      */
     public final boolean solve() {
         try {
@@ -122,6 +117,84 @@ public class DualProblemImpl {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public final void endDualProblem() {
+        this.cplex.end();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public final boolean areCurrentVariablesInteger() {
+        for (DecisionVariable decisionVariable : this.currentValues) {
+            if (!decisionVariable.isInteger()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public final double getCurrentSolution() {
+        try {
+            return this.cplex.getObjValue();
+        } catch (IloException e) {
+            return this.isMinimumProblem ? Double.MAX_VALUE : Double.MIN_VALUE;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public final List<DecisionVariable> getCurrentValues() {
+        List<DecisionVariable> values = new ArrayList<>();
+        for (DecisionVariable value : this.currentValues) {
+            values.add(new DecisionVariableImpl(value.getName(), value.getIndex(), value.getCurrentValue()));
+        }
+        return values;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public final List<BranchCut> getCurrentCuts() {
+        return this.currentCuts.keySet().stream().toList();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public final boolean doesDecisionVariableGrowTheObjective(DecisionVariable decisionVariable) {
+        try {
+            if (this.objectiveFunction.getExpr() instanceof IloLinearNumExpr linearObjectiveFunction) {
+                IloLinearNumExprIterator it = linearObjectiveFunction.linearIterator();
+                while (it.hasNext()) {
+                    if (it.nextNumVar().getName().equals(decisionVariable.getName())) {
+                        return it.getValue() > 0;
+                    }
+                }
+            }
+
+            System.err.println("Failed to retrive decision variable's coefficient from the objective");
+            System.exit(1);
+            return false;
+        } catch (IloException e) {
+            System.err.println("Failed to retrive decision variable's coefficient from the objective");
+            System.exit(1);
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isMinimumProblem() {
+        return this.isMinimumProblem;
+    }
 
     /**
      * Prints by {@code System.out} the given problem.
@@ -129,7 +202,7 @@ public class DualProblemImpl {
      * @param problemTableau    the matrix describing the problem.
      * @param objectiveFunction the objective function of the problem
      */
-    public final void printProblem(IloLPMatrix problemTableau, IloObjective objectiveFunction) {
+    private void printProblem(IloLPMatrix problemTableau, IloObjective objectiveFunction) {
         StringBuilder status = new StringBuilder();
         try {
 
@@ -174,11 +247,11 @@ public class DualProblemImpl {
     }
 
     /**
-     * Prints by {@code System.out} the given problem.
+     * Prints by {@code System.out} the last solution.
      *
-     * @param cplex
+     * @param cplex the existing model which solved the problem.
      */
-    public final void printSolution(IloCplex cplex) {
+    private void printSolution(IloCplex cplex) {
         StringBuilder status = new StringBuilder();
         try {
             status.append("\n\nRELAXATION SOLUTION");
@@ -213,7 +286,7 @@ public class DualProblemImpl {
                 status.append(" ]}");
             }
 
-            for (Map.Entry<BranchCutImpl, IloRange> constraint : this.currentCuts.entrySet()) {
+            for (Map.Entry<BranchCut, IloRange> constraint : this.currentCuts.entrySet()) {
                 status.append("\nbranchCut");
                 status.append(constraint.getKey().getId());
                 status.append(" => {[ Slack: ");
@@ -228,87 +301,6 @@ public class DualProblemImpl {
         }
     }
 
-    public final void endDualProblem() {
-        this.cplex.end();
-    }
-
-    /**
-     * Check if current values of the variables result integer.
-     *
-     * @return true if all the current values of the variables result integer.
-     */
-    public final Boolean areCurrentVariablesInteger() {
-        for (DecisionVariableImpl decisionVariable : this.currentValues) {
-            if (!decisionVariable.isInteger()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * The current value of the objective function.
-     *
-     * @return the current value of the objective function.
-     * Note for impossible infinity is returned as Double.MAX or Double.Min
-     */
-    public final double getCurrentSolution() {
-        try {
-            return this.cplex.getObjValue();
-        } catch (IloException e) {
-            return this.isMinimumProblem ? Double.MAX_VALUE : Double.MIN_VALUE;
-        }
-    }
-
-    /**
-     * @return current variables
-     */
-    public final List<DecisionVariableImpl> getCurrentValues() {
-        List<DecisionVariableImpl> values = new ArrayList<>();
-        for (DecisionVariableImpl value : this.currentValues) {
-            values.add(new DecisionVariableImpl(value.getName(), value.getIndex(), value.getCurrentValue()));
-        }
-        return values;
-    }
-
-    /**
-     * @return current cuts
-     */
-    public final List<BranchCutImpl> getCurrentCuts() {
-        return this.currentCuts.keySet().stream().toList();
-    }
-
-    /**
-     * @return true if the decision variable passed has positive coefficient in the objective function.
-     */
-    public final boolean doesDecisionVariableGrowTheObjective(DecisionVariableImpl decisionVariable) {
-        try {
-            if (this.objectiveFunction.getExpr() instanceof IloLinearNumExpr linearObjectiveFunction) {
-                IloLinearNumExprIterator it = linearObjectiveFunction.linearIterator();
-                while (it.hasNext()) {
-                    if (it.nextNumVar().getName().equals(decisionVariable.getName())) {
-                        return it.getValue() > 0;
-                    }
-                }
-            }
-
-            System.err.println("Failed to retrive decision variable's coefficient from the objective");
-            System.exit(1);
-            return false;
-        } catch (IloException e) {
-            System.err.println("Failed to retrive decision variable's coefficient from the objective");
-            System.exit(1);
-            return false;
-        }
-    }
-
-    /**
-     * @return true if the objective function sense is minimum.
-     */
-    public boolean isMinimumProblem() {
-        return this.isMinimumProblem;
-    }
-
     /**
      * Updates the current values of the variables from last solution.
      *
@@ -317,7 +309,7 @@ public class DualProblemImpl {
     private void updateCurrentValues() throws IloException {
         IloNumVar[] vars = this.cplex.getMatrix().getNumVars();
         for (int i = 0; i < vars.length; i++) {
-            DecisionVariableImpl problemVariable = this.currentValues.get(i);
+            DecisionVariable problemVariable = this.currentValues.get(i);
             problemVariable.setCurrentValue(cplex.getValue(vars[i]));
         }
     }

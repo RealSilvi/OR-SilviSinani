@@ -5,15 +5,24 @@ import it.unibo.api.Presentation;
 import java.io.PrintStream;
 import java.util.Scanner;
 
+/**
+ * Manage a basic ui for the application.
+ */
 public class PresentationImpl implements Presentation {
 
     private static final Scanner input = new Scanner(System.in);
     private static final PrintStream output = System.out;
 
+    /**
+     * Start the application.
+     */
     public PresentationImpl() {
         this.start();
     }
 
+    /**
+     * Start the application.
+     */
     private void start() {
         this.displayIntro();
 
@@ -43,6 +52,9 @@ public class PresentationImpl implements Presentation {
         }
     }
 
+    /**
+     * Display the intro
+     */
     private void displayIntro() {
         output.println();
         output.println();
@@ -66,7 +78,12 @@ public class PresentationImpl implements Presentation {
         output.println();
     }
 
-    private void runProgram(String path){
-        new BranchAndBoundProblem(path);
+    /**
+     * Runs the BranchAndBound Algorithm.
+     *
+     * @param path from the file containing the problem.
+     */
+    private void runProgram(String path) {
+        new BranchAndBoundProblemImpl(path);
     }
 }

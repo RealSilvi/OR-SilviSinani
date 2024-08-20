@@ -2,8 +2,7 @@ package it.unibo;
 
 import it.unibo.impl.PresentationImpl;
 
-public class RoSinaniSilviImpl {
-
+public class RoSinaniSilvi {
     public static void main(String[] args) {
         new PresentationImpl();
     }
