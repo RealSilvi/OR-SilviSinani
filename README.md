@@ -1,4 +1,4 @@
-# RoSilviSinani
+# OR-SilviSinani
 
 This repository is a university project.<br>
 Course: Operative Research.<br>
